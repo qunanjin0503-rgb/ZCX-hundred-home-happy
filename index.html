@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>百家乐 - 智能适配</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            min-height: 100dvh;
+            background: linear-gradient(135deg, #1a0a0a 0%, #2d1810 50%, #1a0a0a 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .container {
+            text-align: center;
+            padding: 20px;
+            max-width: 600px;
+        }
+        
+        h1 {
+            color: #ffd700;
+            margin-bottom: 30px;
+            font-size: 2em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .loading {
+            color: #ffd700;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+        
+        .device-info {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #ffd700;
+            margin-bottom: 20px;
+        }
+        
+        .device-info p {
+            color: #ffd700;
+            margin: 10px 0;
+            font-size: 1em;
+        }
+        
+        .device-info strong {
+            color: #fff;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            background: linear-gradient(135deg, #ffd700 0%, #daa520 100%);
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .manual-choice {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 215, 0, 0.3);
+        }
+        
+        .manual-choice h2 {
+            color: #ffd700;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎰 百家乐游戏 🎰</h1>
+        
+        <div class="loading" id="loading">正在检测设备并加载适合的版本...</div>
+        
+        <div class="device-info" id="deviceInfo" style="display: none;">
+            <p>设备类型: <strong id="deviceType"></strong></p>
+            <p>屏幕宽度: <strong id="screenWidth"></strong>px</p>
+            <p>推荐版本: <strong id="recommendedVersion"></strong></p>
+        </div>
+        
+        <div id="buttonContainer" style="display: none;">
+            <a href="baccarat.html" class="btn">🖥️ 桌面版</a>
+            <a href="mobile-baccarat.html" class="btn">📱 手机版</a>
+        </div>
+        
+        <div class="manual-choice" id="manualChoice" style="display: none;">
+            <h2>选择游戏版本</h2>
+            <p style="color: #aaa; margin-bottom: 15px;">如果自动检测不准确，请手动选择：</p>
+            <a href="baccarat.html" class="btn">🖥️ 桌面版</a>
+            <a href="mobile-baccarat.html" class="btn">📱 手机版</a>
+        </div>
+    </div>
+
+    <script>
+        // 检测设备和屏幕尺寸
+        function detectDevice() {
+            const width = window.innerWidth;
+            const userAgent = navigator.userAgent.toLowerCase();
+            const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+            const isIOS = /iphone|ipad|ipod/i.test(userAgent);
+            
+            // 根据屏幕宽度判断
+            let recommended = 'desktop';
+            if (width <= 768) {
+                recommended = 'mobile';
+            } else if (width <= 1024) {
+                recommended = isMobile ? 'mobile' : 'desktop';
+            }
+            
+            return {
+                isMobile,
+                isIOS,
+                width,
+                recommended
+            };
+        }
+
+        // 显示设备信息
+        function showDeviceInfo(device) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('deviceInfo').style.display = 'block';
+            
+            document.getElementById('deviceType').textContent = device.isMobile ? '移动设备' : '桌面设备';
+            document.getElementById('screenWidth').textContent = device.width;
+            document.getElementById('recommendedVersion').textContent = device.recommended === 'mobile' ? '手机版' : '桌面版';
+            
+            document.getElementById('buttonContainer').style.display = 'block';
+            document.getElementById('manualChoice').style.display = 'block';
+        }
+
+        // 自动跳转
+        function autoRedirect(device) {
+            // 延迟2秒后自动跳转，给用户时间查看信息
+            setTimeout(() => {
+                const targetFile = device.recommended === 'mobile' ? 'mobile-baccarat.html' : 'baccarat.html';
+                window.location.href = targetFile;
+            }, 2500);
+        }
+
+        // 主函数
+        function init() {
+            const device = detectDevice();
+            showDeviceInfo(device);
+            
+            // 显示取消自动跳转的选项
+            const buttonContainer = document.getElementById('buttonContainer');
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'btn';
+            cancelBtn.textContent = '取消自动跳转';
+            cancelBtn.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #e55555 100%)';
+            cancelBtn.style.marginTop = '20px';
+            cancelBtn.onclick = () => {
+                // 清除定时器，停止自动跳转
+                const timeouts = window.setTimeout(function(){}, 0);
+                for (let i = 1; i <= timeouts; i++) {
+                    window.clearTimeout(i);
+                }
+                cancelBtn.style.display = 'none';
+            };
+            buttonContainer.appendChild(cancelBtn);
+            
+            // 开始自动跳转
+            autoRedirect(device);
+        }
+
+        // 页面加载完成后执行
+        window.onload = init;
+
+        // 窗口大小改变时重新检测
+        window.onresize = () => {
+            const loading = document.getElementById('loading');
+            if (loading && loading.style.display !== 'none') {
+                return; // 首次加载还没完成，不重复检测
+            }
+            // 可以在这里添加重新检测的逻辑
+        };
+    </script>
+</body>
+</html>
