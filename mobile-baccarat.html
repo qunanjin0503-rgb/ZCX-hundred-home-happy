@@ -1,0 +1,1910 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>百家乐 - 手机优化版</title>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        html {
+            touch-action: manipulation;
+            font-size: 16px;
+        }
+
+        /* 背景视频容器 */
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            overflow: hidden;
+        }
+
+        .video-background video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: rgba(0, 0, 0, 0.4);
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            position: relative;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        /* 赌场灯光效果 */
+        .casino-lights {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: -1;
+            background: 
+                linear-gradient(90deg, transparent 0%, rgba(255, 215, 0, 0.03) 50%, transparent 100%),
+                linear-gradient(0deg, transparent 0%, rgba(255, 215, 0, 0.03) 50%, transparent 100%);
+            animation: lights 4s ease-in-out infinite;
+        }
+
+        @keyframes lights {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        /* 主容器 */
+        .game-container {
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 0;
+            padding: 10px;
+            width: 100%;
+            max-width: 100%;
+            box-shadow: none;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
+
+        /* 标题 */
+        h1 {
+            text-align: center;
+            color: #ffd700;
+            margin: 10px 0;
+            font-size: 1.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            letter-spacing: 2px;
+            line-height: 1.3;
+        }
+
+        /* 余额显示 */
+        .balance-display {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 8px 15px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #ffd700;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .balance-label {
+            color: #ffd700;
+            font-size: 0.9em;
+            margin-right: 10px;
+            text-transform: uppercase;
+        }
+
+        .balance-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 统计信息 */
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .stat-label {
+            color: #aaa;
+            font-size: 0.7em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* 游戏桌面 - 垂直布局 */
+        .game-table {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .hand-section {
+            background: rgba(255, 215, 0, 0.1);
+            border: 2px solid #ffd700;
+            border-radius: 10px;
+            padding: 10px;
+            min-height: 140px;
+            position: relative;
+        }
+
+        .hand-section.player {
+            border-color: #4a9eff;
+            background: rgba(74, 158, 255, 0.1);
+        }
+
+        .hand-section.tie {
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .hand-title {
+            text-align: center;
+            color: #ffd700;
+            font-size: 1em;
+            margin-bottom: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .player .hand-title {
+            color: #4a9eff;
+        }
+
+        .tie .hand-title {
+            color: #ff6b6b;
+        }
+
+        /* 卡片容器 */
+        .cards-container {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            min-height: 90px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* 卡片 */
+        .card {
+            width: 50px;
+            height: 72px;
+            background: linear-gradient(145deg, #ffffff 0%, #f5f5f5 50%, #e8e8e8 100%);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px;
+            font-size: 1em;
+            font-weight: bold;
+            box-shadow: 
+                0 2px 4px rgba(0, 0, 0, 0.1),
+                0 4px 8px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            transition: transform 0.2s ease;
+            position: relative;
+            border: 1px solid #ddd;
+        }
+
+        .card-red {
+            color: #e74c3c;
+        }
+
+        .card-black {
+            color: #2c3e50;
+        }
+
+        .card-value-top {
+            position: absolute;
+            top: 4px;
+            left: 6px;
+            font-size: 0.7em;
+            line-height: 1;
+        }
+
+        .card-suit-center {
+            font-size: 1.5em;
+            margin: auto;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .card-value-bottom {
+            position: absolute;
+            bottom: 4px;
+            right: 6px;
+            font-size: 0.7em;
+            line-height: 1;
+            transform: rotate(180deg);
+        }
+
+        .score {
+            text-align: center;
+            font-size: 0.9em;
+            color: white;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        /* 3D小人 */
+        .avatar-3d {
+            width: 70px;
+            height: 100px;
+            margin: 0 auto 10px;
+            position: relative;
+            transform-style: preserve-3d;
+            animation: bodySway 3s ease-in-out infinite;
+            will-change: transform;
+        }
+
+        .avatar-3d-container {
+            width: 100%;
+            height: 70px;
+            position: relative;
+            transform-style: preserve-3d;
+            animation: headSway 4s ease-in-out infinite;
+        }
+
+        .avatar-face {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            overflow: hidden;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 
+                0 0 0 2px #ffd700,
+                0 0 0 4px #daa520,
+                0 0 10px rgba(255, 215, 0, 0.4),
+                0 5px 15px rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .avatar-face img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .avatar-neck {
+            position: absolute;
+            width: 20px;
+            height: 15px;
+            background: linear-gradient(180deg, #d4a574 0%, #c49a6c 100%);
+            top: 55px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 3px;
+        }
+
+        .avatar-body {
+            position: absolute;
+            width: 55px;
+            height: 45px;
+            background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%);
+            top: 65px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 8px 8px 0 0;
+            box-shadow: 
+                inset 0 3px 6px rgba(255, 255, 255, 0.1),
+                0 5px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .avatar-tie {
+            position: absolute;
+            width: 8px;
+            height: 30px;
+            background: linear-gradient(180deg, #ffd700 0%, #daa520 100%);
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 0 0 2px 2px;
+            box-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
+        }
+
+        .avatar-tie::before {
+            content: '';
+            position: absolute;
+            width: 14px;
+            height: 5px;
+            background: #ffd700;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 0 0 2px 2px;
+        }
+
+        .avatar-shoulders {
+            position: absolute;
+            width: 90px;
+            height: 22px;
+            background: linear-gradient(180deg, #34495e 0%, #2c3e50 100%);
+            top: 62px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 12px 12px 4px 4px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .avatar-arms {
+            position: absolute;
+            width: 110px;
+            height: 40px;
+            top: 65px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .avatar-arm {
+            position: absolute;
+            width: 25px;
+            height: 45px;
+            background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%);
+            border-radius: 12px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .avatar-arm.left {
+            left: 0;
+            transform-origin: top center;
+            animation: armWaveLeft 2.5s ease-in-out infinite;
+        }
+
+        .avatar-arm.right {
+            right: 0;
+            transform-origin: top center;
+            animation: armWaveRight 2.5s ease-in-out infinite;
+        }
+
+        .avatar-arm::after {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #d4a574 0%, #c49a6c 100%);
+            border-radius: 50%;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes armWaveLeft {
+            0%, 100% { transform: rotate(-6deg); }
+            50% { transform: rotate(6deg); }
+        }
+
+        @keyframes armWaveRight {
+            0%, 100% { transform: rotate(6deg); }
+            50% { transform: rotate(-6deg); }
+        }
+
+        @keyframes bodySway {
+            0%, 100% { transform: translateY(0) rotateY(-2deg); }
+            50% { transform: translateY(2px) rotateY(2deg); }
+        }
+
+        @keyframes headSway {
+            0%, 100% { transform: rotateY(-2deg); }
+            50% { transform: rotateY(2deg); }
+        }
+
+        .avatar-3d {
+            transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .avatar-moving {
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        /* 下注金额显示 */
+        .bet-display {
+            text-align: center;
+            font-size: 1em;
+            color: #ffd700;
+            margin: 8px 0;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 8px;
+        }
+
+        /* 筹码按钮 */
+        .bet-amount-input {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin: 8px 0;
+        }
+
+        .bet-chip {
+            padding: 10px 5px;
+            font-size: 0.85em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .bet-chip:active {
+            transform: scale(0.95);
+        }
+
+        .chip-200 {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            border: 2px solid #ff6b6b;
+        }
+
+        .chip-500 {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            border: 2px solid #5dade2;
+        }
+
+        .chip-1000 {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            border: 2px solid #58d68d;
+        }
+
+        .chip-5000 {
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+            border: 2px solid #bb8fce;
+        }
+
+        .chip-10000 {
+            background: linear-gradient(135deg, #f39c12 0%, #d68910 100%);
+            border: 2px solid #f5b041;
+        }
+
+        .bet-chip.selected {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px currentColor;
+        }
+
+        /* 下注目标按钮 */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .bet-btn {
+            padding: 12px 20px;
+            font-size: 1em;
+            border: 2px solid;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            background: rgba(0, 0, 0, 0.6);
+            text-align: center;
+        }
+
+        .bet-btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-banker {
+            border-color: #ffd700;
+            color: #ffd700;
+        }
+
+        .btn-player {
+            border-color: #4a9eff;
+            color: #4a9eff;
+        }
+
+        .btn-tie {
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+
+        .bet-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .bet-btn.selected {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px currentColor;
+        }
+
+        /* 操作按钮 */
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn-deal, .btn-new {
+            flex: 1;
+            padding: 14px 20px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .btn-deal {
+            background: linear-gradient(135deg, #ffd700 0%, #daa520 100%);
+            color: #000;
+        }
+
+        .btn-deal:disabled {
+            background: #666;
+            color: #999;
+        }
+
+        .btn-new {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            display: none;
+        }
+
+        .btn-loan {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 贷款对话框 */
+        .loan-dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .loan-dialog.show {
+            display: flex;
+        }
+
+        .loan-content {
+            background: rgba(0, 0, 0, 0.95);
+            border: 2px solid #ffd700;
+            border-radius: 15px;
+            padding: 20px;
+            max-width: 90%;
+            width: 350px;
+            text-align: center;
+            animation: dialogSlideIn 0.3s ease-out;
+        }
+
+        @keyframes dialogSlideIn {
+            from {
+                transform: translateY(-30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .loan-title {
+            color: #ffd700;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .loan-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .loan-option {
+            padding: 15px;
+            border: 2px solid;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .loan-option:hover:not(:disabled) {
+            transform: scale(1.03);
+        }
+
+        .loan-option.sell-house {
+            border-color: #ffd700;
+            color: #ffd700;
+        }
+
+        .loan-option.sell-house:hover:not(:disabled) {
+            background: rgba(255, 215, 0, 0.15);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .loan-option.sell-car {
+            border-color: #4a9eff;
+            color: #4a9eff;
+        }
+
+        .loan-option.sell-car:hover:not(:disabled) {
+            background: rgba(74, 158, 255, 0.15);
+            box-shadow: 0 0 15px rgba(74, 158, 255, 0.3);
+        }
+
+        .loan-option:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .loan-option-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .loan-option-amount {
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .loan-option-info {
+            font-size: 0.85em;
+            margin-top: 5px;
+            color: #aaa;
+        }
+
+        .loan-close {
+            padding: 8px 25px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #aaa;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .loan-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* 游戏结束屏幕 */
+        .game-over-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+        }
+
+        .game-over-screen.active {
+            display: flex;
+            animation: flashRed 0.1s infinite;
+        }
+
+        @keyframes flashRed {
+            0%, 100% {
+                background: rgba(255, 0, 0, 0.3);
+            }
+            50% {
+                background: rgba(255, 0, 0, 0.1);
+            }
+        }
+
+        .game-over-text {
+            font-size: 6em;
+            font-weight: bold;
+            color: #ff0000;
+            text-shadow: 0 0 50px rgba(255, 0, 0, 0.8);
+            opacity: 0;
+            animation: fadeInGame 2s ease-out forwards;
+            letter-spacing: 10px;
+        }
+
+        @keyframes fadeInGame {
+            0% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .game-over-hint {
+            position: absolute;
+            bottom: 80px;
+            color: white;
+            font-size: 1.1em;
+            opacity: 0;
+            animation: fadeInHint 1s ease-out 3s forwards;
+            cursor: pointer;
+            padding: 8px 20px;
+            border: 2px solid white;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .game-over-hint:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        @keyframes fadeInHint {
+            0% {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 消息显示 */
+        .message {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            padding: 12px;
+            border-radius: 8px;
+            animation: slideIn 0.3s ease-out;
+            display: none;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(10px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .message.win {
+            color: #ffd700;
+            background: rgba(255, 215, 0, 0.2);
+            border: 2px solid #ffd700;
+        }
+
+        .message.lose {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.2);
+            border: 2px solid #ff6b6b;
+        }
+
+        .message.tie {
+            color: #4a9eff;
+            background: rgba(74, 158, 255, 0.2);
+            border: 2px solid #4a9eff;
+        }
+
+        /* 话术气泡 */
+        .avatar-speech {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 12px;
+            font-size: 0.9em;
+            font-weight: bold;
+            max-width: 200px;
+            z-index: 1000;
+            animation: speechBubble 3s ease-in-out forwards;
+            border: 2px solid #ffd700;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .avatar-speech::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 20px;
+            border-width: 8px 8px 0;
+            border-style: solid;
+            border-color: #ffd700 transparent transparent transparent;
+        }
+
+        @keyframes speechBubble {
+            0% {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            10% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            80% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-15px);
+            }
+        }
+
+        /* 围观人群 */
+        .crowd-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .spectator {
+            position: absolute;
+            font-size: 1.5em;
+            opacity: 0.2;
+            animation: cheer 2s ease-in-out infinite;
+            filter: blur(0.5px);
+        }
+
+        @keyframes cheer {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-5px) scale(1.05); }
+        }
+
+        /* 结果动画 */
+        .result-animation {
+            animation: celebrate 0.6s ease-in-out;
+        }
+
+        @keyframes celebrate {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        /* 底部空间 */
+        .bottom-spacer {
+            height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="video-background">
+        <video autoplay muted loop playsinline>
+            <source src="生成澳门赌场场景 (3).mp4" type="video/mp4">
+        </video>
+    </div>
+    <div class="casino-lights"></div>
+    <div class="crowd-container" id="crowdContainer"></div>
+    
+    <div class="game-container">
+        <h1>🎰 澳门百家乐 🎰</h1>
+
+        <div class="balance-display">
+            <span class="balance-label">💰 余额</span>
+            <span class="balance-value" id="balance">10,000,000</span>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="bankerWins">0</div>
+                <div class="stat-label">庄家</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="playerWins">0</div>
+                <div class="stat-label">玩家</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="ties">0</div>
+                <div class="stat-label">平局</div>
+            </div>
+        </div>
+
+        <div class="game-table">
+            <div class="hand-section" id="bankerSection">
+                <div class="hand-title">庄家</div>
+                <div class="cards-container" id="bankerCards"></div>
+                <div class="score" id="bankerScore">点数: -</div>
+            </div>
+
+            <div class="hand-section tie" id="tieSection">
+                <div class="hand-title">平局</div>
+                <div class="cards-container" id="avatarContainer"></div>
+                <div class="score" id="tieScore">-</div>
+            </div>
+
+            <div class="hand-section player" id="playerSection">
+                <div class="hand-title">玩家</div>
+                <div class="cards-container" id="playerCards"></div>
+                <div class="score" id="playerScore">点数: -</div>
+            </div>
+        </div>
+
+        <div class="bet-display" id="betDisplay">请选择下注金额</div>
+
+        <div class="bet-amount-input">
+            <button class="bet-chip chip-200" onclick="selectBetAmount(200)">200万</button>
+            <button class="bet-chip chip-500" onclick="selectBetAmount(500)">500万</button>
+            <button class="bet-chip chip-1000" onclick="selectBetAmount(1000)">1000万</button>
+            <button class="bet-chip chip-5000" onclick="selectBetAmount(5000)">5000万</button>
+            <button class="bet-chip chip-10000" onclick="selectBetAmount(10000)">1亿</button>
+            <button class="bet-chip chip-allin" id="btnAllIn" onclick="allIn()" style="background: linear-gradient(135deg, #ff00ff 0%, #ff0055 100%); border: 2px solid #ff44ff;">ALL IN</button>
+        </div>
+
+        <div class="controls">
+            <button class="bet-btn btn-banker" id="btnBanker" onclick="placeBet('banker')">庄家</button>
+            <button class="bet-btn btn-player" id="btnPlayer" onclick="placeBet('player')">玩家</button>
+            <button class="bet-btn btn-tie" id="btnTie" onclick="placeBet('tie')">平局</button>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn-deal" id="btnDeal" onclick="deal()" disabled>发牌</button>
+            <button class="btn-new" id="btnNew" onclick="newGame()">新局</button>
+            <button class="btn-loan" id="btnLoan" onclick="openLoanDialog()">贷款</button>
+        </div>
+
+        <div class="message" id="message"></div>
+        
+        <div class="bottom-spacer"></div>
+    </div>
+
+    <div id="speechContainer"></div>
+
+    <!-- 贷款对话框 -->
+    <div class="loan-dialog" id="loanDialog">
+        <div class="loan-content">
+            <div class="loan-title">🏦 银行贷款</div>
+            <div class="loan-options">
+                <button class="loan-option sell-house" id="btnSellHouse" onclick="sellHouse()">
+                    <div class="loan-option-title">🏠 卖房子</div>
+                    <div class="loan-option-amount">+200万</div>
+                    <div class="loan-option-info" id="sellHouseInfo">剩余次数: 2/2</div>
+                </button>
+                <button class="loan-option sell-car" id="btnSellCar" onclick="sellCar()">
+                    <div class="loan-option-title">🚗 卖车子</div>
+                    <div class="loan-option-amount" id="sellCarAmount">+100万</div>
+                    <div class="loan-option-info" id="sellCarInfo">剩余次数: 4/4</div>
+                </button>
+            </div>
+            <button class="loan-close" onclick="closeLoanDialog()">关闭</button>
+        </div>
+    </div>
+
+    <!-- 游戏结束屏幕 -->
+    <div class="game-over-screen" id="gameOverScreen">
+        <div class="game-over-text">大跌倒</div>
+        <div class="game-over-hint" onclick="location.reload()">点击刷新重新开始</div>
+    </div>
+
+    <div id="avatarWrapper" class="avatar-3d" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 100; opacity: 0.9;">
+        <div class="avatar-3d-container">
+            <div class="avatar-face">
+                <img id="currentAvatar" src="" alt="玩家头像" class="face-crop">
+            </div>
+            <div class="avatar-neck"></div>
+        </div>
+        <div class="avatar-shoulders"></div>
+        <div class="avatar-body"></div>
+        <div class="avatar-tie"></div>
+        <div class="avatar-arms">
+            <div class="avatar-arm left"></div>
+            <div class="avatar-arm right"></div>
+        </div>
+    </div>
+
+    <script>
+        // 游戏状态
+        let deck = [];
+        let bankerHand = [];
+        let playerHand = [];
+        let gameOver = false;
+        let currentBet = null;
+        let currentBetAmount = 0;
+        let balance = 10000000;
+        let bankerWins = 0;
+        let playerWins = 0;
+        let ties = 0;
+        let faceApiLoaded = false;
+        let processedImages = {};
+        let currentAvatarIndex = 0;
+        let loseMessageIndex = 0;
+        let winAnimationIndex = 0;
+        let avatarPosition = 'center'; // 记录小人当前位置
+
+        // 贷款相关状态
+        let houseSellCount = 0;
+        let carSellCount = 0;
+        const maxHouseSell = 2;
+        const maxCarSell = 4;
+        let carLoanAmount = 100;
+
+        // 可用的图片列表
+        const availableImages = [
+            'b2d4f1e3ab900c95936a09e9e535a581.jpg',
+            '微信图片_20260313090338_46_73.jpg',
+            '微信图片_20260313090339_47_73.jpg',
+            '微信图片_20260313090340_48_73.jpg',
+            '微信图片_20260313090341_49_73.jpg',
+            '微信图片_20260313090344_50_73.jpg',
+            '微信图片_20260313090346_51_73.jpg'
+        ];
+
+        const suits = ['♠', '♥', '♦', '♣'];
+        const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+        // 加载face-api模型
+        async function loadFaceApi() {
+            try {
+                await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/');
+                await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/');
+                faceApiLoaded = true;
+                console.log('Face API 加载成功');
+                processAllImages();
+            } catch (error) {
+                console.error('Face API 加载失败:', error);
+                useOriginalImages();
+            }
+        }
+
+        async function processAllImages() {
+            for (let i = 0; i < availableImages.length; i++) {
+                await processImage(availableImages[i]);
+            }
+            selectRandomAvatar();
+        }
+
+        async function processImage(imagePath) {
+            try {
+                const img = await loadImage(imagePath);
+                const detections = await faceapi.detectAllFaces(img, new faceapi.TinyFaceDetectorOptions())
+                    .withFaceLandmarks();
+                
+                if (detections.length > 0) {
+                    const detection = detections[0];
+                    const box = detection.detection.box;
+                    
+                    const canvas = document.createElement('canvas');
+                    const padding = 20;
+                    canvas.width = box.width + padding * 2;
+                    canvas.height = box.height + padding * 2;
+                    const ctx = canvas.getContext('2d');
+                    
+                    ctx.drawImage(
+                        img,
+                        Math.max(0, box.x - padding),
+                        Math.max(0, box.y - padding),
+                        box.width + padding * 2,
+                        box.height + padding * 2,
+                        0, 0, canvas.width, canvas.height
+                    );
+                    
+                    processedImages[imagePath] = canvas.toDataURL('image/jpeg', 0.9);
+                } else {
+                    processedImages[imagePath] = imagePath;
+                }
+            } catch (error) {
+                console.error(`处理图片失败 ${imagePath}:`, error);
+                processedImages[imagePath] = imagePath;
+            }
+        }
+
+        function loadImage(imagePath) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = imagePath;
+            });
+        }
+
+        function useOriginalImages() {
+            availableImages.forEach(imagePath => {
+                processedImages[imagePath] = imagePath;
+            });
+            selectRandomAvatar();
+        }
+
+        function selectRandomAvatar() {
+            const randomIndex = Math.floor(Math.random() * availableImages.length);
+            currentAvatarIndex = randomIndex;
+            const imagePath = availableImages[randomIndex];
+            const avatarSrc = processedImages[imagePath] || imagePath;
+            document.getElementById('currentAvatar').src = avatarSrc;
+        }
+
+        function changeAvatarForNewRound() {
+            const randomIndex = Math.floor(Math.random() * availableImages.length);
+            currentAvatarIndex = randomIndex;
+            const imagePath = availableImages[randomIndex];
+            const avatarSrc = processedImages[imagePath] || imagePath;
+            document.getElementById('currentAvatar').src = avatarSrc;
+        }
+
+        function createDeck() {
+            deck = [];
+            for (let d = 0; d < 8; d++) {
+                for (let suit of suits) {
+                    for (let value of values) {
+                        deck.push({ suit, value });
+                    }
+                }
+            }
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+        }
+
+        function calculateScore(hand) {
+            let score = 0;
+            for (let card of hand) {
+                if (card.value === 'A') {
+                    score += 1;
+                } else if (['J', 'Q', 'K'].includes(card.value)) {
+                    score += 10;
+                } else {
+                    score += parseInt(card.value);
+                }
+            }
+            return score % 10;
+        }
+
+        function dealCard() {
+            return deck.pop();
+        }
+
+        function createCardElement(card) {
+            const cardDiv = document.createElement('div');
+            const isRed = ['♥', '♦'].includes(card.suit);
+            cardDiv.classList.add(isRed ? 'card-red' : 'card-black');
+            cardDiv.innerHTML = `
+                <div class="card-value-top">${card.value}</div>
+                <div class="card-suit-center">${card.suit}</div>
+                <div class="card-value-bottom">${card.value}</div>
+            `;
+            return cardDiv;
+        }
+
+        function updateDisplay() {
+            const bankerCardsDiv = document.getElementById('bankerCards');
+            const playerCardsDiv = document.getElementById('playerCards');
+            const bankerScoreDiv = document.getElementById('bankerScore');
+            const playerScoreDiv = document.getElementById('playerScore');
+
+            bankerCardsDiv.innerHTML = '';
+            for (let card of bankerHand) {
+                bankerCardsDiv.appendChild(createCardElement(card));
+            }
+
+            playerCardsDiv.innerHTML = '';
+            for (let card of playerHand) {
+                playerCardsDiv.appendChild(createCardElement(card));
+            }
+
+            if (bankerHand.length > 0) {
+                const bankerScore = calculateScore(bankerHand);
+                bankerScoreDiv.textContent = `点数: ${bankerScore}`;
+            } else {
+                bankerScoreDiv.textContent = '点数: -';
+            }
+
+            if (playerHand.length > 0) {
+                const playerScore = calculateScore(playerHand);
+                playerScoreDiv.textContent = `点数: ${playerScore}`;
+            } else {
+                playerScoreDiv.textContent = '点数: -';
+            }
+        }
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type} result-animation`;
+            messageDiv.style.display = 'block';
+        }
+
+        function updateStats() {
+            document.getElementById('bankerWins').textContent = bankerWins;
+            document.getElementById('playerWins').textContent = playerWins;
+            document.getElementById('ties').textContent = ties;
+        }
+
+        function updateBalance() {
+            document.getElementById('balance').textContent = balance.toLocaleString();
+        }
+
+        function selectBetAmount(amount) {
+            if (gameOver) return;
+
+            if (amount > balance) {
+                showMessage('余额不足！', 'lose');
+                return;
+            }
+
+            // 将单位转换为万
+            const displayAmount = amount * 10000;
+            currentBetAmount = displayAmount;
+            document.getElementById('betDisplay').textContent = `已选择: ${displayAmount.toLocaleString()} - 请选择下注目标`;
+
+            document.querySelectorAll('.bet-chip').forEach(chip => {
+                chip.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+        }
+
+        // ALL IN功能
+        let isAllIn = false;
+
+        function allIn() {
+            if (gameOver || balance <= 0) {
+                showMessage('无法ALL IN！', 'lose');
+                return;
+            }
+
+            isAllIn = true;
+            currentBetAmount = balance;
+
+            document.getElementById('betDisplay').textContent = `ALL IN: ${balance.toLocaleString()} - 请选择下注目标`;
+
+            document.querySelectorAll('.bet-chip').forEach(chip => {
+                chip.classList.remove('selected');
+            });
+            document.getElementById('btnAllIn').classList.add('selected');
+
+            // 添加ALL IN特效
+            addAllInEffect();
+        }
+
+        function addAllInEffect() {
+            const gameContainer = document.querySelector('.game-container');
+
+            // 添加紧张特效
+            gameContainer.style.boxShadow = '0 0 30px rgba(255, 0, 85, 0.8)';
+
+            // 小人超级紧张动画
+            const avatarWrapper = document.getElementById('avatarWrapper');
+            avatarWrapper.style.animation = 'tenseShake 0.1s infinite';
+
+            // 添加紧张样式
+            const style = document.createElement('style');
+            style.id = 'tenseStyle';
+            style.textContent = `
+                @keyframes tenseShake {
+                    0%, 100% { transform: translate(-50%, -50%) rotate(0deg) scale(1.05); }
+                    25% { transform: translate(-50%, -50%) rotate(-3deg) scale(1.05); }
+                    75% { transform: translate(-50%, -50%) rotate(3deg) scale(1.05); }
+                }
+                .avatar-3d.tense .avatar-face {
+                    box-shadow: 0 0 20px rgba(255, 0, 85, 0.9), 0 0 0 2px #ff0085, 0 0 0 4px #ff0055;
+                }
+                .avatar-3d.tense .avatar-body {
+                    background: linear-gradient(180deg, #ff0055 0%, #cc0044 100%);
+                }
+            `;
+            document.head.appendChild(style);
+
+            avatarWrapper.classList.add('tense');
+
+            // 增加围观人群
+            addMoreCrowd();
+        }
+
+        function addMoreCrowd() {
+            const container = document.getElementById('crowdContainer');
+
+            // 添加额外的围观人群（更多）
+            const extraSpectators = 10;
+            const spectators = ['👨', '👩', '👴', '👵', '👱', '👨‍🦰', '👩‍🦰', '🧔', '👨‍🦱', '👩‍🦱', '👳', '🧕', '👲', '🤵', '👷', '🕴️', '💃', '🕺'];
+
+            for (let i = 0; i < extraSpectators; i++) {
+                const spectator = document.createElement('div');
+                spectator.className = 'spectator';
+                spectator.textContent = spectators[Math.floor(Math.random() * spectators.length)];
+
+                const angle = (i / extraSpectators) * Math.PI * 2;
+                const radius = 30 + Math.random() * 8;
+                const x = 50 + Math.cos(angle) * radius;
+                const y = 50 + Math.sin(angle) * radius;
+
+                spectator.style.left = `${x}%`;
+                spectator.style.top = `${y}%`;
+                spectator.style.animationDelay = `${Math.random() * 2}s`;
+                spectator.style.transform = `translate(-50%, -50%) scale(${0.8 + Math.random() * 0.3})`;
+                spectator.style.fontSize = '1.8em';
+                spectator.style.opacity = '0.35';
+
+                container.appendChild(spectator);
+            }
+        }
+
+        function removeAllInEffect() {
+            const gameContainer = document.querySelector('.game-container');
+            gameContainer.style.boxShadow = 'none';
+
+            const avatarWrapper = document.getElementById('avatarWrapper');
+            avatarWrapper.style.animation = '';
+
+            const tenseStyle = document.getElementById('tenseStyle');
+            if (tenseStyle) {
+                tenseStyle.remove();
+            }
+
+            avatarWrapper.classList.remove('tense');
+
+            // 恢复正常围观人群
+            updateCrowd();
+        }
+
+        // 贷款对话框相关函数
+        function openLoanDialog() {
+            const dialog = document.getElementById('loanDialog');
+            dialog.classList.add('show');
+            updateLoanOptions();
+        }
+
+        function closeLoanDialog() {
+            const dialog = document.getElementById('loanDialog');
+            dialog.classList.remove('show');
+        }
+
+        function updateLoanOptions() {
+            const btnSellHouse = document.getElementById('btnSellHouse');
+            const sellHouseInfo = document.getElementById('sellHouseInfo');
+
+            if (houseSellCount >= maxHouseSell) {
+                btnSellHouse.disabled = true;
+                sellHouseInfo.textContent = '已用完';
+            } else {
+                btnSellHouse.disabled = false;
+                sellHouseInfo.textContent = `剩余次数: ${maxHouseSell - houseSellCount}/${maxHouseSell}`;
+            }
+
+            const btnSellCar = document.getElementById('btnSellCar');
+            const sellCarAmount = document.getElementById('sellCarAmount');
+            const sellCarInfo = document.getElementById('sellCarInfo');
+
+            if (carSellCount >= maxCarSell) {
+                btnSellCar.disabled = true;
+                sellCarAmount.textContent = '已用完';
+                sellCarInfo.textContent = '已用完';
+            } else {
+                btnSellCar.disabled = false;
+                const currentLoanAmount = carLoanAmount - (carSellCount * 20);
+                sellCarAmount.textContent = `+${currentLoanAmount}万`;
+                sellCarInfo.textContent = `剩余次数: ${maxCarSell - carSellCount}/${maxCarSell}`;
+            }
+        }
+
+        function sellHouse() {
+            if (houseSellCount >= maxHouseSell) return;
+
+            balance += 2000000;
+            houseSellCount++;
+
+            updateBalance();
+            updateLoanOptions();
+
+            showSpeechBubble('🏠 房子卖了！+200万');
+
+            setTimeout(() => {
+                closeLoanDialog();
+            }, 2000);
+        }
+
+        function sellCar() {
+            if (carSellCount >= maxCarSell) return;
+
+            const currentLoanAmount = carLoanAmount - (carSellCount * 20);
+            balance += currentLoanAmount * 10000;
+            carSellCount++;
+
+            updateBalance();
+            updateLoanOptions();
+
+            showSpeechBubble(`🚗 车子卖了！+${currentLoanAmount}万`);
+
+            setTimeout(() => {
+                closeLoanDialog();
+            }, 2000);
+        }
+
+        function triggerGameOver() {
+            const gameOverScreen = document.getElementById('gameOverScreen');
+            gameOverScreen.classList.add('active');
+
+            document.querySelectorAll('button').forEach(btn => {
+                btn.disabled = true;
+            });
+
+            const avatarWrapper = document.getElementById('avatarWrapper');
+            avatarWrapper.classList.add('crying');
+        }
+
+        function checkBalance() {
+            if (balance <= 0) {
+                if (houseSellCount < maxHouseSell || carSellCount < maxCarSell) {
+                    return;
+                }
+
+                setTimeout(() => {
+                    triggerGameOver();
+                }, 2000);
+            }
+        }
+
+        function placeBet(bet) {
+            if (gameOver) return;
+            if (currentBetAmount === 0) {
+                showMessage('请先选择下注金额！', 'lose');
+                return;
+            }
+            if (currentBetAmount > balance) {
+                showMessage('余额不足！', 'lose');
+                return;
+            }
+
+            currentBet = bet;
+            
+            document.getElementById('betDisplay').textContent = `下注: ${currentBetAmount.toLocaleString()} on ${bet === 'banker' ? '庄家' : bet === 'player' ? '玩家' : '平局'}`;
+            
+            document.querySelectorAll('.bet-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            document.getElementById(`btn${bet.charAt(0).toUpperCase() + bet.slice(1)}`).classList.add('selected');
+            
+            moveAvatarTo(bet);
+            
+            document.getElementById('btnDeal').disabled = false;
+        }
+
+        function moveAvatarTo(position) {
+            const avatarWrapper = document.getElementById('avatarWrapper');
+            const targetSection = document.getElementById(`${position}Section`);
+            const cardsContainer = targetSection.querySelector('.cards-container');
+
+            avatarWrapper.classList.remove('in-banker', 'in-player', 'in-tie');
+
+            const rect = cardsContainer.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            avatarWrapper.classList.add('avatar-moving');
+
+            avatarWrapper.style.left = `${centerX}px`;
+            avatarWrapper.style.top = `${centerY}px`;
+
+            avatarWrapper.classList.add(`in-${position}`);
+
+            // 记录当前位置
+            avatarPosition = position;
+
+            setTimeout(() => {
+                avatarWrapper.classList.remove('avatar-moving');
+            }, 500);
+        }
+
+        // 重新定位小人（响应窗口大小变化）
+        function repositionAvatar() {
+            const avatarWrapper = document.getElementById('avatarWrapper');
+
+            // 移除移动动画类，避免闪烁
+            avatarWrapper.classList.remove('avatar-moving');
+
+            if (avatarPosition === 'center') {
+                // 回到中心位置
+                avatarWrapper.style.left = '50%';
+                avatarWrapper.style.top = '50%';
+                avatarWrapper.style.transform = 'translate(-50%, -50%)';
+            } else {
+                // 重新计算当前位置
+                const targetSection = document.getElementById(`${avatarPosition}Section`);
+                if (targetSection) {
+                    const cardsContainer = targetSection.querySelector('.cards-container');
+                    if (cardsContainer) {
+                        const rect = cardsContainer.getBoundingClientRect();
+                        const centerX = rect.left + rect.width / 2;
+                        const centerY = rect.top + rect.height / 2;
+                        avatarWrapper.style.left = `${centerX}px`;
+                        avatarWrapper.style.top = `${centerY}px`;
+                        avatarWrapper.style.transform = 'translate(-50%, -50%)';
+                    }
+                }
+            }
+        }
+
+        // 监听窗口大小变化
+        window.addEventListener('resize', function() {
+            // 防抖，避免频繁触发
+            if (window.resizeTimer) {
+                clearTimeout(window.resizeTimer);
+            }
+            window.resizeTimer = setTimeout(function() {
+                repositionAvatar();
+            }, 100);
+        });
+
+        // 监听设备旋转
+        window.addEventListener('orientationchange', function() {
+            setTimeout(function() {
+                repositionAvatar();
+            }, 200); // 延迟，等待旋转完成
+        });
+
+        // 监听滚动事件
+        window.addEventListener('scroll', function() {
+            // 防抖，避免频繁触发
+            if (window.scrollTimer) {
+                clearTimeout(window.scrollTimer);
+            }
+            window.scrollTimer = setTimeout(function() {
+                repositionAvatar();
+            }, 50);
+        });
+
+        function shouldDrawThirdCard(hand, isPlayer) {
+            const score = calculateScore(hand);
+            
+            if (isPlayer) {
+                return score <= 5;
+            } else {
+                if (score <= 2) return true;
+                if (score >= 7) return false;
+                
+                const playerThirdCard = playerHand[2];
+                if (!playerThirdCard) {
+                    return score <= 5;
+                }
+                
+                const playerThirdValue = playerThirdCard.value;
+                if (score === 3) return playerThirdValue !== '8';
+                if (score === 4) return ['2', '3', '4', '5', '6', '7'].includes(playerThirdValue);
+                if (score === 5) return ['4', '5', '6', '7'].includes(playerThirdValue);
+                if (score === 6) return ['6', '7'].includes(playerThirdValue);
+                
+                return false;
+            }
+        }
+
+        function deal() {
+            if (!currentBet || gameOver) return;
+
+            balance -= currentBetAmount;
+            updateBalance();
+
+            gameOver = true;
+            document.getElementById('btnDeal').disabled = true;
+            document.querySelectorAll('.bet-btn').forEach(btn => {
+                btn.disabled = true;
+            });
+
+            playerHand.push(dealCard());
+            bankerHand.push(dealCard());
+            playerHand.push(dealCard());
+            bankerHand.push(dealCard());
+
+            updateDisplay();
+
+            const playerScore = calculateScore(playerHand);
+            const bankerScore = calculateScore(bankerHand);
+
+            if (playerScore >= 8 || bankerScore >= 8) {
+                determineWinner();
+                return;
+            }
+
+            setTimeout(() => {
+                if (shouldDrawThirdCard(playerHand, true)) {
+                    playerHand.push(dealCard());
+                    updateDisplay();
+                }
+
+                setTimeout(() => {
+                    if (shouldDrawThirdCard(bankerHand, false)) {
+                        bankerHand.push(dealCard());
+                        updateDisplay();
+                    }
+
+                    setTimeout(() => {
+                        determineWinner();
+                    }, 400);
+                }, 400);
+            }, 400);
+        }
+
+        function determineWinner() {
+            const playerScore = calculateScore(playerHand);
+            const bankerScore = calculateScore(bankerHand);
+
+            let result, message;
+
+            if (playerScore > bankerScore) {
+                result = 'player';
+                message = `玩家胜！(${playerScore} vs ${bankerScore})`;
+                playerWins++;
+                showMessage(message, 'win');
+                document.getElementById('playerSection').classList.add('result-animation');
+            } else if (bankerScore > playerScore) {
+                result = 'banker';
+                message = `庄家胜！(${bankerScore} vs ${playerScore})`;
+                bankerWins++;
+                showMessage(message, 'lose');
+                document.getElementById('bankerSection').classList.add('result-animation');
+            } else {
+                result = 'tie';
+                message = `平局！(${playerScore} 平)`;
+                ties++;
+                showMessage(message, 'tie');
+                document.getElementById('tieSection').classList.add('result-animation');
+            }
+
+            let winnings = 0;
+            if (result === currentBet) {
+                if (result === 'tie') {
+                    winnings = currentBetAmount * 8;
+                } else if (result === 'player') {
+                    winnings = currentBetAmount * 2;
+                } else {
+                    winnings = Math.floor(currentBetAmount * 1.95);
+                }
+                balance += winnings;
+                message += ` 恭喜你赢了 ${winnings.toLocaleString()}！`;
+                playWinAnimation();
+            } else {
+                message += ` 你输了 ${currentBetAmount.toLocaleString()}`;
+                playLoseAnimation();
+            }
+
+            updateBalance();
+            updateStats();
+            document.getElementById('btnNew').style.display = 'inline-block';
+
+            // 检查余额
+            checkBalance();
+        }
+
+        function playLoseAnimation() {
+            const avatarWrapper = document.getElementById('avatarWrapper');
+
+            // 移除之前的动画和ALL IN效果
+            avatarWrapper.classList.remove('crying', 'celebration-sports-car', 'celebration-diving', 'celebration-luxury', 'tense');
+            removeAllInEffect();
+
+            avatarWrapper.classList.add('crying');
+
+            // 显示输掉的话术 - 如果是ALL IN则使用特殊话术
+            let message;
+            if (isAllIn) {
+                message = '妈妈我将化身为萤火虫';
+                isAllIn = false;
+            } else {
+                const loseMessages = ['大跌倒！', '卖房了！', '跑分去了！'];
+                message = loseMessages[loseMessageIndex];
+                loseMessageIndex = (loseMessageIndex + 1) % loseMessages.length;
+            }
+
+            showSpeechBubble(message);
+
+            setTimeout(() => {
+                avatarWrapper.classList.remove('crying');
+            }, 2000);
+        }
+
+        function playWinAnimation() {
+            const avatarWrapper = document.getElementById('avatarWrapper');
+
+            // 移除之前的动画和ALL IN效果
+            avatarWrapper.classList.remove('crying', 'celebration-sports-car', 'celebration-diving', 'celebration-luxury', 'tense');
+            removeAllInEffect();
+
+            // 显示赢的话术 - 如果是ALL IN则使用特殊话术
+            let message;
+            if (isAllIn) {
+                message = '我分析过，这把肯定赢的';
+                isAllIn = false;
+
+                // ALL IN赢了也要有庆祝动画
+                const animations = ['celebration-sports-car', 'celebration-diving', 'celebration-luxury'];
+                const animation = animations[winAnimationIndex];
+                winAnimationIndex = (winAnimationIndex + 1) % animations.length;
+                avatarWrapper.classList.add(animation);
+
+                setTimeout(() => {
+                    avatarWrapper.classList.remove(animation);
+                }, 3000);
+            } else {
+                const animations = ['celebration-sports-car', 'celebration-diving', 'celebration-luxury'];
+                const animation = animations[winAnimationIndex];
+                winAnimationIndex = (winAnimationIndex + 1) % animations.length;
+
+                avatarWrapper.classList.add(animation);
+
+                if (animation === 'celebration-sports-car') {
+                    message = '🏎️ 开着跑车兜风！';
+                } else if (animation === 'celebration-diving') {
+                    message = '🏊 在海里潜水！';
+                } else {
+                    message = '💎 买奢侈品！';
+                }
+
+                setTimeout(() => {
+                    avatarWrapper.classList.remove(animation);
+                }, 3000);
+            }
+
+            showSpeechBubble(message);
+        }
+
+        function showSpeechBubble(text) {
+            const speechContainer = document.getElementById('speechContainer');
+            const speech = document.createElement('div');
+            speech.className = 'avatar-speech';
+            speech.textContent = text;
+
+            const avatarWrapper = document.getElementById('avatarWrapper');
+            const rect = avatarWrapper.getBoundingClientRect();
+            const bubbleWidth = 180;
+            speech.style.left = `${rect.left + rect.width / 2 - bubbleWidth / 2}px`;
+            speech.style.top = `${rect.top - 50}px`;
+
+            speechContainer.appendChild(speech);
+            
+            setTimeout(() => {
+                speech.remove();
+            }, 3000);
+        }
+
+        function newGame() {
+            gameOver = false;
+            playerHand = [];
+            bankerHand = [];
+            currentBet = null;
+            currentBetAmount = 0;
+            isAllIn = false;
+            document.getElementById('message').style.display = 'none';
+            document.getElementById('btnNew').style.display = 'none';
+            document.getElementById('betDisplay').textContent = '请选择下注金额';
+
+            changeAvatarForNewRound();
+            resetAvatarPosition();
+
+            const avatarWrapper = document.getElementById('avatarWrapper');
+            avatarWrapper.classList.remove('crying', 'celebration-sports-car', 'celebration-diving', 'celebration-luxury', 'tense');
+
+            // 清除ALL IN效果
+            removeAllInEffect();
+
+            document.getElementById('speechContainer').innerHTML = '';
+
+            document.querySelectorAll('.bet-btn').forEach(btn => {
+                btn.classList.remove('selected');
+                btn.disabled = false;
+            });
+            document.querySelectorAll('.bet-chip').forEach(chip => {
+                chip.classList.remove('selected');
+            });
+            document.getElementById('btnDeal').disabled = true;
+
+            document.querySelectorAll('.result-animation').forEach(el => {
+                el.classList.remove('result-animation');
+            });
+
+            createDeck();
+            updateDisplay();
+            updateCrowd();
+        }
+
+        function resetAvatarPosition() {
+            const avatarWrapper = document.getElementById('avatarWrapper');
+            avatarWrapper.classList.remove('in-banker', 'in-player', 'in-tie', 'avatar-moving');
+            avatarWrapper.style.left = '50%';
+            avatarWrapper.style.top = '50%';
+            avatarWrapper.style.transform = 'translate(-50%, -50%)';
+
+            // 记录位置为中心
+            avatarPosition = 'center';
+        }
+
+        function updateCrowd() {
+            const container = document.getElementById('crowdContainer');
+            container.innerHTML = '';
+            
+            const totalWins = playerWins;
+            const crowdCount = Math.min(totalWins * 2 + 3, 15);
+            
+            const spectators = ['👨', '👩', '👴', '👵', '👱', '👨‍🦰', '👩‍🦰', '🧔', '👨‍🦱', '👩‍🦱', '👳', '🧕', '👲', '🤵', '👷', '🕴️', '💃', '🕺'];
+            
+            for (let i = 0; i < crowdCount; i++) {
+                const spectator = document.createElement('div');
+                spectator.className = 'spectator';
+                spectator.textContent = spectators[Math.floor(Math.random() * spectators.length)];
+                
+                const angle = (i / crowdCount) * Math.PI * 2;
+                const radius = 25 + Math.random() * 10;
+                const x = 50 + Math.cos(angle) * radius;
+                const y = 50 + Math.sin(angle) * radius;
+                
+                spectator.style.left = `${x}%`;
+                spectator.style.top = `${y}%`;
+                spectator.style.animationDelay = `${Math.random() * 2}s`;
+                spectator.style.transform = `translate(-50%, -50%) scale(${0.7 + Math.random() * 0.3})`;
+                
+                container.appendChild(spectator);
+            }
+        }
+
+        loadFaceApi();
+        newGame();
+        updateCrowd();
+    </script>
+</body>
+</html>
